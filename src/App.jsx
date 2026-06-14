@@ -1,6 +1,37 @@
 import { useState, useEffect } from "react";
 
-// ── SUPABASE CONFIG ──
+const PIN = "020924";
+
+function LoginScreen({ onLogin }) {
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState("");
+  const [shake, setShake] = useState(false);
+  const handleNum = (n) => { if (pin.length < 6) setPin(p => p+n); };
+  const handleDel = () => setPin(p => p.slice(0,-1));
+  const handleLogin = () => {
+    if (pin === PIN) { onLogin(); setPin(""); setError(""); }
+    else { setError("PIN salah!"); setShake(true); setPin(""); setTimeout(() => { setShake(false); setError(""); }, 1000); }
+  };
+  useEffect(() => { if (pin.length === 6) handleLogin(); }, [pin]);
+  const nums = [1,2,3,4,5,6,7,8,9,"",0,"âŒ«"];
+  return (
+    <div style={{ minHeight:"100vh", background:"linear-gradient(135deg,#1a0a00,#3d1f00)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:20 }}>
+      <div style={{ fontSize:32, fontWeight:900, color:"#f5c842", marginBottom:4 }}>SAe Angkringan</div>
+      <div style={{ fontSize:13, color:"#c9a96e", marginBottom:40 }}>ðŸ“’ Buku Pengeluaran</div>
+      <div style={{ display:"flex", gap:12, marginBottom:16, animation: shake ? "shake 0.3s" : "none" }}>
+        {[0,1,2,3,4,5].map(i => (<div key={i} style={{ width:16, height:16, borderRadius:"50%", background: pin.length > i ? "#f5c842" : "rgba(255,255,255,0.2)", transition:"background 0.15s" }} />))}
+      </div>
+      {error && <div style={{ color:"#ff6b6b", fontSize:13, marginBottom:12, fontWeight:700 }}>{error}</div>}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, width:240 }}>
+        {nums.map((n,i) => (<button key={i} onClick={() => n==="âŒ«" ? handleDel() : n!=="" ? handleNum(String(n)) : null} style={{ height:64, borderRadius:16, border:"none", cursor: n==="" ? "default" : "pointer", background: n==="" ? "transparent" : n==="âŒ«" ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.12)", color:"#fff", fontSize:22, fontWeight:700 }}>{n}</button>))}
+      </div>
+      <div style={{ marginTop:32, fontSize:11, color:"rgba(255,255,255,0.3)" }}>SAe Angkringan Â© 2026</div>
+      <style>{`@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }`}</style>
+    </div>
+  );
+}
+
+// â”€â”€ SUPABASE CONFIG â”€â”€
 const SUPABASE_URL = "https://escaqwyowrenrsikbvvh.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzY2Fxd3lvd3JlbnJzaWtidnZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNjcyMDEsImV4cCI6MjA5NTY0MzIwMX0.9OXNxsJUmahr2fkarQqGRmdwS1-qkxkXnzic8Wa7LDo";
 
@@ -64,6 +95,7 @@ const toDateKey = (d) => { const x=new Date(d); return `${x.getFullYear()}-${Str
 const today = toDateKey(new Date());
 
 export default function PengeluaranSAe() {
+  const [loggedIn, setLoggedIn] = useState(false);
   const [view, setView] = useState("input");
   const [tab, setTab] = useState("barang");
   const [cart, setCart] = useState({}); // {id: qty}
@@ -180,23 +212,26 @@ export default function PengeluaranSAe() {
 
   const filteredBarang = BARANG_DAGANGAN.filter(b => b.nama.toLowerCase().includes(search.toLowerCase()));
 
+  if (!loggedIn) return <LoginScreen onLogin={() => setLoggedIn(true)} />;
+
   return (
     <div style={{ fontFamily:"'Nunito','Segoe UI',sans-serif", background:"#fdf6ec", minHeight:"100vh", color:"#2d1a00" }}>
       {/* Header */}
       <div style={{ background:"linear-gradient(135deg,#1a0a00,#3d1f00)", padding:"13px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", boxShadow:"0 3px 12px rgba(0,0,0,0.3)" }}>
         <div>
           <div style={{ fontSize:18, fontWeight:900, color:"#f5c842" }}>SAe Angkringan</div>
-          <div style={{ fontSize:10, color:"#c9a96e" }}>📒 Buku Pengeluaran</div>
+          <div style={{ fontSize:10, color:"#c9a96e" }}>ðŸ“’ Buku Pengeluaran</div>
         </div>
         <div style={{ display:"flex", gap:7 }}>
-          {[["input","✏️ Input"],["rekap","📊 Rekap"]].map(([v,label])=>(
+          {[["input","âœï¸ Input"],["rekap","ðŸ“Š Rekap"]].map(([v,label])=>(
             <button key={v} onClick={()=>setView(v)} style={{ padding:"6px 12px", borderRadius:20, border:"none", cursor:"pointer", fontWeight:700, fontSize:11, background:view===v?"#f5c842":"rgba(255,255,255,0.1)", color:view===v?"#1a0a00":"#f5c842" }}>{label}</button>
           ))}
+          <button onClick={()=>setLoggedIn(false)} style={{ padding:"6px 10px", borderRadius:20, border:"none", cursor:"pointer", fontWeight:700, fontSize:11, background:"rgba(255,255,255,0.1)", color:"#f5c842" }}>Keluar</button>
         </div>
       </div>
 
       {showSuccess && (
-        <div style={{ position:"fixed", top:68, left:"50%", transform:"translateX(-50%)", background:"#22c55e", color:"#fff", padding:"11px 26px", borderRadius:30, fontWeight:800, fontSize:14, zIndex:999 }}>✅ Tersimpan!</div>
+        <div style={{ position:"fixed", top:68, left:"50%", transform:"translateX(-50%)", background:"#22c55e", color:"#fff", padding:"11px 26px", borderRadius:30, fontWeight:800, fontSize:14, zIndex:999 }}>âœ… Tersimpan!</div>
       )}
 
       {/* INPUT VIEW */}
@@ -204,7 +239,7 @@ export default function PengeluaranSAe() {
         <div style={{ display:"flex", flexDirection:"column", height:"calc(100vh - 58px)" }}>
           {/* Tab */}
           <div style={{ display:"flex", borderBottom:"2px solid #f0e0c0", background:"#fff" }}>
-            {[["barang","🛒 Barang"],["lain","📝 Lainnya"]].map(([t,label])=>(
+            {[["barang","ðŸ›’ Barang"],["lain","ðŸ“ Lainnya"]].map(([t,label])=>(
               <button key={t} onClick={()=>setTab(t)} style={{ flex:1, padding:"10px 0", border:"none", cursor:"pointer", fontWeight:700, fontSize:12, background:tab===t?"#fff":"#fdf6ec", color:tab===t?"#c47a1e":"#aaa", borderBottom:tab===t?"2px solid #c47a1e":"none" }}>{label}</button>
             ))}
           </div>
@@ -212,7 +247,7 @@ export default function PengeluaranSAe() {
           {tab === "barang" && (
             <>
               <div style={{ padding:"10px 14px 0" }}>
-                <input placeholder="🔍 Cari barang..." value={search} onChange={e=>setSearch(e.target.value)}
+                <input placeholder="ðŸ” Cari barang..." value={search} onChange={e=>setSearch(e.target.value)}
                   style={{ width:"100%", padding:"8px 13px", borderRadius:20, border:"2px solid #e8d5b0", background:"#fff", fontSize:13, outline:"none", boxSizing:"border-box", color:"#2d1a00" }} />
               </div>
 
@@ -228,7 +263,7 @@ export default function PengeluaranSAe() {
                       <div style={{ fontSize:12, fontWeight:700, marginBottom:3, lineHeight:1.3, paddingRight:qty>0?18:0 }}>{b.nama}</div>
                       <div style={{ fontSize:12, fontWeight:900, color:"#ef4444", marginBottom:7 }}>{formatRp(b.harga)}</div>
                       <div style={{ display:"flex", gap:5 }}>
-                        <button onClick={()=>updateCart(b.id,-1)} style={{ width:28, height:28, borderRadius:7, border:"none", background:qty>0?"#fee2e2":"#f0f0f0", color:qty>0?"#ef4444":"#ccc", fontWeight:900, fontSize:15, cursor:qty>0?"pointer":"default" }}>−</button>
+                        <button onClick={()=>updateCart(b.id,-1)} style={{ width:28, height:28, borderRadius:7, border:"none", background:qty>0?"#fee2e2":"#f0f0f0", color:qty>0?"#ef4444":"#ccc", fontWeight:900, fontSize:15, cursor:qty>0?"pointer":"default" }}>âˆ’</button>
                         <button onClick={()=>updateCart(b.id,1)} style={{ flex:1, height:28, borderRadius:7, border:"none", background:"#c47a1e", color:"#fff", fontWeight:700, fontSize:11, cursor:"pointer" }}>+ Tambah</button>
                       </div>
                     </div>
@@ -252,8 +287,8 @@ export default function PengeluaranSAe() {
                     <span style={{ color:"#ef4444" }}>{formatRp(cartTotal)}</span>
                   </div>
                   <div style={{ display:"flex", gap:8 }}>
-                    <button onClick={()=>setCart({})} style={{ padding:"10px 16px", borderRadius:10, border:"none", background:"#fee2e2", color:"#ef4444", fontWeight:700, fontSize:13, cursor:"pointer" }}>🗑 Batal</button>
-                    <button onClick={simpanBelanja} style={{ flex:1, padding:"10px 0", borderRadius:10, border:"none", background:"linear-gradient(135deg,#c47a1e,#f5a623)", color:"#fff", fontWeight:900, fontSize:15, cursor:"pointer" }}>✅ Simpan Belanja</button>
+                    <button onClick={()=>setCart({})} style={{ padding:"10px 16px", borderRadius:10, border:"none", background:"#fee2e2", color:"#ef4444", fontWeight:700, fontSize:13, cursor:"pointer" }}>ðŸ—‘ Batal</button>
+                    <button onClick={simpanBelanja} style={{ flex:1, padding:"10px 0", borderRadius:10, border:"none", background:"linear-gradient(135deg,#c47a1e,#f5a623)", color:"#fff", fontWeight:900, fontSize:15, cursor:"pointer" }}>âœ… Simpan Belanja</button>
                   </div>
                 </div>
               )}
@@ -298,7 +333,7 @@ export default function PengeluaranSAe() {
                       <div style={{ display:"flex", justifyContent:"space-between" }}>
                         <div>
                           <div style={{ fontWeight:800, fontSize:13 }}>{p.nama}</div>
-                          <div style={{ fontSize:11, color:"#999" }}>{p.kategori}{p.catatan?` · ${p.catatan}`:""}</div>
+                          <div style={{ fontSize:11, color:"#999" }}>{p.kategori}{p.catatan?` Â· ${p.catatan}`:""}</div>
                         </div>
                         <span style={{ fontWeight:900, color:"#ef4444" }}>{formatRp(p.total)}</span>
                       </div>
@@ -318,13 +353,13 @@ export default function PengeluaranSAe() {
             <div style={{ fontSize:12, opacity:0.8 }}>{filterDate===today?"Pengeluaran Hari Ini":filterDate||"Total Semua"}</div>
             <div style={{ fontSize:26, fontWeight:900, marginTop:3 }}>{formatRp(totalFiltered)}</div>
             <div style={{ display:"flex", gap:16, marginTop:6 }}>
-              <div style={{ fontSize:11, opacity:0.8 }}>🛒 Barang: {formatRp(totalBarang)}</div>
-              <div style={{ fontSize:11, opacity:0.8 }}>📝 Lain: {formatRp(totalLain)}</div>
+              <div style={{ fontSize:11, opacity:0.8 }}>ðŸ›’ Barang: {formatRp(totalBarang)}</div>
+              <div style={{ fontSize:11, opacity:0.8 }}>ðŸ“ Lain: {formatRp(totalLain)}</div>
             </div>
           </div>
 
           <div style={{ background:"#fff", borderRadius:12, padding:"12px 14px", marginBottom:14, boxShadow:"0 2px 8px rgba(0,0,0,0.07)" }}>
-            <div style={{ fontSize:12, fontWeight:700, color:"#7a4a00", marginBottom:8 }}>📅 Filter Tanggal</div>
+            <div style={{ fontSize:12, fontWeight:700, color:"#7a4a00", marginBottom:8 }}>ðŸ“… Filter Tanggal</div>
             <div style={{ display:"flex", gap:8 }}>
               <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)}
                 style={{ flex:1, padding:"8px 11px", borderRadius:10, border:"2px solid #e8d5b0", fontSize:13, outline:"none", color:"#2d1a00" }} />
@@ -338,7 +373,7 @@ export default function PengeluaranSAe() {
           </div>
 
           {filtered.length === 0
-            ? <div style={{ textAlign:"center", padding:40, color:"#aaa" }}><div style={{fontSize:36}}>📭</div><div style={{fontWeight:700,marginTop:8}}>Belum ada pengeluaran</div></div>
+            ? <div style={{ textAlign:"center", padding:40, color:"#aaa" }}><div style={{fontSize:36}}>ðŸ“­</div><div style={{fontWeight:700,marginTop:8}}>Belum ada pengeluaran</div></div>
             : sortedDates.filter(dk=>!filterDate||dk===filterDate).map(dk=>{
               const dayItems = grouped[dk];
               const d = new Date(dk+"T00:00:00");
@@ -354,7 +389,7 @@ export default function PengeluaranSAe() {
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                         <div>
                           <div style={{ fontWeight:800, fontSize:13 }}>{p.nama}</div>
-                          <div style={{ fontSize:11, color:"#999" }}>{p.type==="barang"?`${p.qty}x ${formatRp(p.hargaSatuan)}`:p.kategori}{p.catatan?` · ${p.catatan}`:""}</div>
+                          <div style={{ fontSize:11, color:"#999" }}>{p.type==="barang"?`${p.qty}x ${formatRp(p.hargaSatuan)}`:p.kategori}{p.catatan?` Â· ${p.catatan}`:""}</div>
                         </div>
                         <div style={{ textAlign:"right" }}>
                           <div style={{ fontWeight:900, color:"#ef4444", fontSize:14 }}>{formatRp(p.total)}</div>
@@ -363,7 +398,7 @@ export default function PengeluaranSAe() {
                                 <button onClick={()=>hapus(p.id)} style={{padding:"3px 8px",borderRadius:6,border:"none",background:"#ef4444",color:"#fff",fontWeight:800,fontSize:10,cursor:"pointer"}}>Hapus</button>
                                 <button onClick={()=>setConfirmId(null)} style={{padding:"3px 8px",borderRadius:6,border:"none",background:"#e5e7eb",color:"#555",fontWeight:700,fontSize:10,cursor:"pointer"}}>Batal</button>
                               </div>
-                            : <button onClick={()=>setConfirmId(p.id)} style={{fontSize:10,color:"#ef4444",background:"#fee2e2",border:"none",borderRadius:6,padding:"2px 8px",cursor:"pointer",marginTop:3}}>🗑 Hapus</button>
+                            : <button onClick={()=>setConfirmId(p.id)} style={{fontSize:10,color:"#ef4444",background:"#fee2e2",border:"none",borderRadius:6,padding:"2px 8px",cursor:"pointer",marginTop:3}}>ðŸ—‘ Hapus</button>
                           }
                         </div>
                       </div>
